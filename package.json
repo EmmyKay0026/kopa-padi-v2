@@ -1,0 +1,42 @@
+{
+  "name": "kopa-padi-v2",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev -w @kopa-padi/api\" \"npm:dev -w @kopa-padi/web\"",
+    "build": "npm run build -w @kopa-padi/api && npm run build -w @kopa-padi/web",
+    "typecheck": "npm run typecheck -w @kopa-padi/api && npm run typecheck -w @kopa-padi/web",
+    "test": "npm test -w @kopa-padi/api",
+    "test:e2e": "npm run test:e2e -w @kopa-padi/api",
+    "db:generate": "npm run db:generate -w @kopa-padi/api",
+    "db:migrate": "npm run db:migrate -w @kopa-padi/api",
+    "db:seed": "npm run db:seed -w @kopa-padi/api",
+    "geo:seed": "npm run geo:seed -w @kopa-padi/api",
+    "geo:validate": "npm run geo:validate -w @kopa-padi/api",
+    "geo:check": "npm run geo:check -w @kopa-padi/api",
+    "geo:scenarios": "npm run geo:scenarios -w @kopa-padi/api",
+    "geo:import-proximity": "npm run geo:import-proximity -w @kopa-padi/api",
+    "notifications:retry": "npm run notifications:retry -w @kopa-padi/api",
+    "restrictions:expire": "npm run restrictions:expire -w @kopa-padi/api",
+    "travel-plans:expire": "npm run travel-plans:expire -w @kopa-padi/api",
+    "matching:work": "npm run matching:work -w @kopa-padi/api",
+    "match-offers:expire": "npm run match-offers:expire -w @kopa-padi/api",
+    "circles:lock": "npm run circles:lock -w @kopa-padi/api",
+    "circles:confirm": "npm run circles:confirm -w @kopa-padi/api",
+    "journeys:remind": "npm run journeys:remind -w @kopa-padi/api",
+    "guides:review": "npm run guides:review -w @kopa-padi/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "overrides": {
+    "@nestjs/platform-fastify": {
+      "fastify": "^5.12.3"
+    }
+  },
+  "dependencies": {
+    "lucide-react": "^1.47.0"
+  }
+}
