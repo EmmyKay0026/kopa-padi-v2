@@ -19,6 +19,7 @@ type Plan = {
 };
 type Status = {
   status: string;
+  matchingInProgress?: boolean;
   circle: {
     id: string;
     status: string;
@@ -261,11 +262,15 @@ function Searching({
   plan,
   lastChecked,
   refreshing,
+  matchingInProgress,
+  notice,
   onRefresh,
 }: {
   plan: Plan;
   lastChecked: Date | null;
   refreshing: boolean;
+  matchingInProgress: boolean;
+  notice: string;
   onRefresh: () => void;
 }) {
   const origin = plan.originTown?.name ?? plan.originLga.name;
@@ -306,7 +311,7 @@ function Searching({
           <div className="matching-check">
             <span>
               <Icon name="clock" size={17} />
-              <b>Matching in progress</b>
+              <b>{matchingInProgress ? "Matching in progress" : "Ready to search again"}</b>
               <small>
                 Last checked:{" "}
                 {lastChecked
@@ -317,11 +322,24 @@ function Searching({
                   : "Just now"}
               </small>
             </span>
-            <button type="button" disabled={refreshing} onClick={onRefresh}>
+            <button
+              type="button"
+              disabled={refreshing || matchingInProgress}
+              onClick={onRefresh}
+            >
               <Icon name="refresh" size={18} />
-              {refreshing ? "Checking…" : "Refresh"}
+              {refreshing
+                ? "Requesting…"
+                : matchingInProgress
+                  ? "Searching…"
+                  : "Search again"}
             </button>
           </div>
+          {notice ? (
+            <p className="matching-rematch-notice" role="status" aria-live="polite">
+              {notice}
+            </p>
+          ) : null}
         </div>
       </section>
       <Privacy />
@@ -605,6 +623,7 @@ export function MatchingStatus() {
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Offer | null>(null);
   const [checked, setChecked] = useState<Date | null>(null);
+  const [rematchNotice, setRematchNotice] = useState("");
   const load = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true);
     setError("");
@@ -655,6 +674,33 @@ export function MatchingStatus() {
       setBusy(null);
     }
   }
+  async function requestRematch() {
+    setRefreshing(true);
+    setError("");
+    setRematchNotice("");
+    try {
+      const result = await api<{
+        status: "QUEUED" | "ALREADY_IN_PROGRESS" | "COOLDOWN";
+        retryAfterSeconds: number;
+      }>("/matching/rematch", { method: "POST" });
+      setRematchNotice(
+        result.status === "QUEUED"
+          ? "A fresh matching search has started. We’ll update this page when it finishes."
+          : result.status === "ALREADY_IN_PROGRESS"
+            ? "Matching is already running for your Travel Plan."
+            : `Please wait ${result.retryAfterSeconds} seconds before searching again.`,
+      );
+      await load(true);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not request another matching search",
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  }
   const offer = data?.offers[0]?.match_offer ?? null,
     stage: 0 | 1 | 2 = data?.circle ? 2 : data?.plan ? 1 : 0;
   const close = useCallback(() => setConfirm(null), []);
@@ -698,7 +744,9 @@ export function MatchingStatus() {
                 plan={data.plan}
                 lastChecked={checked}
                 refreshing={refreshing}
-                onRefresh={() => void load()}
+                matchingInProgress={Boolean(data.status.matchingInProgress)}
+                notice={rematchNotice}
+                onRefresh={() => void requestRematch()}
               />
             ) : data ? (
               <Empty />

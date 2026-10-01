@@ -5094,3 +5094,11 @@ body {
     transform: none !important;
   }
 }
+
+.matching-rematch-notice {
+  margin: 0.75rem 0 0;
+  color: #52615b;
+  font-size: 0.85rem;
+  font-weight: 650;
+  text-align: center;
+}
